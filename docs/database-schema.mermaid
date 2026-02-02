@@ -1,3 +1,7 @@
+# EatClub Database Schema
+
+## ER Diagram
+```mermaid
 ---
 title: EatClub Restaurant Deals Database Schema
 ---
@@ -40,3 +44,18 @@ erDiagram
     RESTAURANT ||--o{ DEAL : "has"
     RESTAURANT ||--o{ RESTAURANT_CUISINE : "has"
     CUISINE ||--o{ RESTAURANT_CUISINE : "belongs to"
+```
+
+## Table Descriptions
+
+### RESTAURANT
+Stores restaurant information including name, address, and operating hours.
+
+### CUISINE
+Normalized lookup table for cuisine types (Indian, Asian, etc.).
+
+### RESTAURANT_CUISINE
+Junction table for many-to-many relationship between restaurants and cuisines.
+
+### DEAL
+Stores deal information linked to restaurants with optional time overrides.
