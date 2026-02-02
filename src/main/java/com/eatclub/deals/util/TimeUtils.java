@@ -31,19 +31,21 @@ public class TimeUtils {
         if (timeStr == null || timeStr.trim().isEmpty()) {
             throw new IllegalArgumentException("Time string cannot be null or empty");
         }
-        
-        String normalized = timeStr.trim().toLowerCase();
-        
+
+        String normalized = timeStr.trim();
+        String lowerCase = normalized.toLowerCase();
+
         try {
             // Try 12-hour format first (e.g., "3:00pm")
-            if (normalized.contains("am") || normalized.contains("pm")) {
-                return LocalTime.parse(normalized, TWELVE_HOUR_FORMATTER);
+            if (lowerCase.contains("am") || lowerCase.contains("pm")) {
+                // Convert to uppercase for parsing (DateTimeFormatter expects AM/PM)
+                return LocalTime.parse(normalized.toUpperCase(), TWELVE_HOUR_FORMATTER);
             }
-            
+
             // Try 24-hour format (e.g., "15:00" or "3:00")
             return LocalTime.parse(normalized, TWENTY_FOUR_HOUR_FORMATTER);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid time format: " + timeStr + 
+            throw new IllegalArgumentException("Invalid time format: " + timeStr +
                     ". Expected format: 'H:MMam/pm' (e.g., '3:00pm') or 'HH:MM' (e.g., '15:00')");
         }
     }
