@@ -21,6 +21,8 @@ Make sure you have Java 17 installed. Check with java -version command.
 
 Then run mvn spring-boot:run and the API will start at http://localhost:8080
 
+I have configured Swagger UI to show the running APIs : - http://localhost:8080/swagger-ui/index.html
+
 ## API Endpoints
 
 Get active deals at a specific time
