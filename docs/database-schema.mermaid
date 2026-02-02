@@ -40,7 +40,10 @@ erDiagram
     RESTAURANT ||--o{ DEAL : "has"
     RESTAURANT ||--o{ RESTAURANT_CUISINE : "has"
     CUISINE ||--o{ RESTAURANT_CUISINE : "belongs to"
-```
+
+## DB Choice
+I chose PostgreSQL for this because the data has clear relationships where restaurants have many deals. 
+It also has good support for UUID fields which match the API objectIds and the TIME type works well for storing open and close hours.
 
 ## Table Descriptions
 
