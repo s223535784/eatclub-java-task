@@ -1,0 +1,42 @@
+---
+title: EatClub Restaurant Deals Database Schema
+---
+erDiagram
+    RESTAURANT {
+        uuid id PK "Primary key - maps to objectId"
+        varchar(255) name "Restaurant name"
+        varchar(255) address1 "Street address"
+        varchar(100) suburb "Suburb/area"
+        varchar(500) image_link "URL to restaurant image"
+        time open_time "Daily opening time"
+        time close_time "Daily closing time"
+        timestamp created_at "Record creation timestamp"
+        timestamp updated_at "Last update timestamp"
+    }
+    
+    CUISINE {
+        serial id PK "Auto-increment primary key"
+        varchar(100) name UK "Unique cuisine name"
+    }
+    
+    RESTAURANT_CUISINE {
+        uuid restaurant_id PK,FK "References RESTAURANT.id"
+        int cuisine_id PK,FK "References CUISINE.id"
+    }
+    
+    DEAL {
+        uuid id PK "Primary key - maps to objectId"
+        uuid restaurant_id FK "References RESTAURANT.id"
+        int discount "Discount percentage (0-100)"
+        boolean dine_in "Is dine-in available"
+        boolean lightning "Is this a lightning deal"
+        int qty_left "Remaining quantity"
+        time open_time "Deal start time (nullable)"
+        time close_time "Deal end time (nullable)"
+        timestamp created_at "Record creation timestamp"
+        timestamp updated_at "Last update timestamp"
+    }
+    
+    RESTAURANT ||--o{ DEAL : "has"
+    RESTAURANT ||--o{ RESTAURANT_CUISINE : "has"
+    CUISINE ||--o{ RESTAURANT_CUISINE : "belongs to"
