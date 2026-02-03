@@ -34,33 +34,22 @@ public class DealService {
     @Value("${eatclub.api.url:https://eccdn.com.au/misc/challengedata.json}")
     private String apiUrl;
 
-    // Simple in-memory cache to avoid repeated API calls
-    // Cache stores the response and timestamp of last fetch
+    // Cache to store API response and avoid repeated calls
     private List<Restaurant> cachedData = null;
     private long cacheTimestamp = 0;
-    private static final long CACHE_TTL_MS = 60000; // Cache for 1 minute (60000 ms)
+    private static final long CACHE_TTL_MS = 60000; // 1 minute
 
-    /**
-     * Fetches restaurant data from the external API with simple caching.
-     *
-     * How caching works:
-     * 1. Check if cache exists and is not expired (within TTL)
-     * 2. If valid cache exists, return cached data (fast - ~1ms)
-     * 3. If no cache or expired, fetch from API and update cache
-     *
-     * @return list of restaurants with their deals
-     * @throws ExternalApiException if the API call fails
-     */
+    // Fetches data from external API with caching
     public List<Restaurant> fetchRestaurantData() {
         long currentTime = System.currentTimeMillis();
 
-        // Check if we have valid cached data
+        // Return cached data if still valid
         if (cachedData != null && (currentTime - cacheTimestamp) < CACHE_TTL_MS) {
             log.info("Returning cached data (age: {} ms)", currentTime - cacheTimestamp);
             return cachedData;
         }
 
-        // Cache miss or expired - fetch fresh data
+        // Fetch fresh data from API
         try {
             log.info("Fetching restaurant data from: {}", apiUrl);
             RestaurantDataResponse response = restTemplate.getForObject(apiUrl, RestaurantDataResponse.class);
@@ -69,7 +58,7 @@ public class DealService {
                 throw new ExternalApiException("No data received from external API");
             }
 
-            // Update cache with fresh data
+            // Save to cache
             cachedData = response.getRestaurants();
             cacheTimestamp = currentTime;
 

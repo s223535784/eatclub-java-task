@@ -8,10 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * REST Controller for restaurant deals API.
- * Provides endpoints for querying active deals and calculating peak times.
- */
+// Controller for deals API endpoints
 @RestController
 @RequestMapping("/api/deals")
 @RequiredArgsConstructor
@@ -20,16 +17,7 @@ public class DealController {
 
     private final DealService dealService;
 
-    /**
-     * Task 1: Get all active deals at a specified time of day.
-     * 
-     * Example usage:
-     *   GET /api/deals?timeOfDay=3:00pm
-     *   GET /api/deals?timeOfDay=15:00
-     * 
-     * @param timeOfDay the time to query (e.g., "3:00pm", "6:00pm", "15:00")
-     * @return JSON response containing list of active deals
-     */
+    // GET /api/deals?timeOfDay=3:00pm - returns active deals at given time
     @GetMapping
     public ResponseEntity<DealsListResponse> getActiveDeals(
             @RequestParam String timeOfDay) {
@@ -39,20 +27,14 @@ public class DealController {
 
         DealsListResponse response = dealService.getActiveDeals(timeOfDay);
 
+        // Log response time for monitoring
         long responseTime = System.currentTimeMillis() - startTime;
         log.info("GET /api/deals?timeOfDay={} - Response time: {} ms", timeOfDay, responseTime);
 
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Task 2: Get the peak time window when most deals are available.
-     * 
-     * Example usage:
-     *   GET /api/deals/peak-time
-     * 
-     * @return JSON response containing peak time start and end
-     */
+    // GET /api/deals/peak-time - returns time window with most deals
     @GetMapping("/peak-time")
     public ResponseEntity<PeakTimeResponse> getPeakTime() {
 
@@ -61,6 +43,7 @@ public class DealController {
 
         PeakTimeResponse response = dealService.getPeakTime();
 
+        // Log response time for monitoring
         long responseTime = System.currentTimeMillis() - startTime;
         log.info("GET /api/deals/peak-time - Response time: {} ms", responseTime);
 
