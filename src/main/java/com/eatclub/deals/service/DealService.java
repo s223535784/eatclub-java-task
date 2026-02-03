@@ -34,23 +34,47 @@ public class DealService {
     @Value("${eatclub.api.url:https://eccdn.com.au/misc/challengedata.json}")
     private String apiUrl;
 
+    // Simple in-memory cache to avoid repeated API calls
+    // Cache stores the response and timestamp of last fetch
+    private List<Restaurant> cachedData = null;
+    private long cacheTimestamp = 0;
+    private static final long CACHE_TTL_MS = 60000; // Cache for 1 minute (60000 ms)
+
     /**
-     * Fetches restaurant data from the external API.
-     * 
+     * Fetches restaurant data from the external API with simple caching.
+     *
+     * How caching works:
+     * 1. Check if cache exists and is not expired (within TTL)
+     * 2. If valid cache exists, return cached data (fast - ~1ms)
+     * 3. If no cache or expired, fetch from API and update cache
+     *
      * @return list of restaurants with their deals
      * @throws ExternalApiException if the API call fails
      */
     public List<Restaurant> fetchRestaurantData() {
+        long currentTime = System.currentTimeMillis();
+
+        // Check if we have valid cached data
+        if (cachedData != null && (currentTime - cacheTimestamp) < CACHE_TTL_MS) {
+            log.info("Returning cached data (age: {} ms)", currentTime - cacheTimestamp);
+            return cachedData;
+        }
+
+        // Cache miss or expired - fetch fresh data
         try {
             log.info("Fetching restaurant data from: {}", apiUrl);
             RestaurantDataResponse response = restTemplate.getForObject(apiUrl, RestaurantDataResponse.class);
-            
+
             if (response == null || response.getRestaurants() == null) {
                 throw new ExternalApiException("No data received from external API");
             }
-            
-            log.info("Successfully fetched {} restaurants", response.getRestaurants().size());
-            return response.getRestaurants();
+
+            // Update cache with fresh data
+            cachedData = response.getRestaurants();
+            cacheTimestamp = currentTime;
+
+            log.info("Successfully fetched {} restaurants (cache updated)", response.getRestaurants().size());
+            return cachedData;
         } catch (RestClientException e) {
             log.error("Failed to fetch restaurant data: {}", e.getMessage());
             throw new ExternalApiException("Failed to fetch restaurant data from external API", e);

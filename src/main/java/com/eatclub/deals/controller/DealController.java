@@ -33,9 +33,15 @@ public class DealController {
     @GetMapping
     public ResponseEntity<DealsListResponse> getActiveDeals(
             @RequestParam String timeOfDay) {
-        
+
+        long startTime = System.currentTimeMillis();
         log.info("Received request for active deals at: {}", timeOfDay);
+
         DealsListResponse response = dealService.getActiveDeals(timeOfDay);
+
+        long responseTime = System.currentTimeMillis() - startTime;
+        log.info("GET /api/deals?timeOfDay={} - Response time: {} ms", timeOfDay, responseTime);
+
         return ResponseEntity.ok(response);
     }
 
@@ -49,9 +55,15 @@ public class DealController {
      */
     @GetMapping("/peak-time")
     public ResponseEntity<PeakTimeResponse> getPeakTime() {
-        
+
+        long startTime = System.currentTimeMillis();
         log.info("Received request for peak time calculation");
+
         PeakTimeResponse response = dealService.getPeakTime();
+
+        long responseTime = System.currentTimeMillis() - startTime;
+        log.info("GET /api/deals/peak-time - Response time: {} ms", responseTime);
+
         return ResponseEntity.ok(response);
     }
 }

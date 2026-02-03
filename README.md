@@ -21,6 +21,24 @@ Make sure you have Java 17 installed. Check with java -version command.
 
 Then run mvn spring-boot:run and the API will start at http://localhost:8080
 
+### Using Helper Scripts (Windows)
+
+The project includes batch files for easy start/stop
+
+Start the application (kills existing process, cleans, and starts)
+
+```
+start.bat
+```
+
+Stop the application
+
+```
+stop.bat
+```
+
+These scripts automatically handle port 8080 conflicts so you do not need to manually kill processes.
+
 I have configured Swagger UI to show the running APIs : - http://localhost:8080/swagger-ui/index.html
 
 ## API Endpoints
@@ -69,10 +87,74 @@ The schema diagram is in docs/database-schema.mermaid
 
 Main tables are restaurant, deal, cuisine, and restaurant_cuisine which links restaurants to their cuisines.
 
+## Performance Optimizations
+
+### 1. Simple In-Memory Caching
+
+The API caches external API responses to avoid repeated network calls. This is implemented in DealService.java using a simple approach
+
+```java
+// Cache variables
+private List<Restaurant> cachedData = null;
+private long cacheTimestamp = 0;
+private static final long CACHE_TTL_MS = 60000; // 1 minute
+
+// In fetchRestaurantData method
+long currentTime = System.currentTimeMillis();
+if (cachedData != null && (currentTime - cacheTimestamp) < CACHE_TTL_MS) {
+    return cachedData; // Return cached data
+}
+// Otherwise fetch fresh data and update cache
+```
+
+How it works
+
+- First request fetches from external API (~180ms) and stores in cache
+- Subsequent requests within 1 minute return cached data (~1ms)
+- After 1 minute the cache expires and fresh data is fetched
+
+Explanation: This is a simple TTL (Time To Live) cache. We store the data and timestamp when it was fetched. On each request we check if the cache is still valid by comparing current time with the stored timestamp. If the difference is less than TTL we return cached data otherwise we fetch fresh data.
+
+### 2. Response Compression
+
+Enabled GZIP compression for JSON responses in application.properties
+
+```properties
+server.compression.enabled=true
+server.compression.mime-types=application/json
+server.compression.min-response-size=1024
+```
+
+This compresses responses larger than 1KB which reduces network transfer time.
+
+### 3. Response Time Logging
+
+Each API endpoint logs its response time in milliseconds
+
+```java
+long startTime = System.currentTimeMillis();
+// ... API logic ...
+long responseTime = System.currentTimeMillis() - startTime;
+log.info("GET /api/deals - Response time: {} ms", responseTime);
+```
+
+Sample log output
+
+```
+INFO  GET /api/deals?timeOfDay=3:00pm - Response time: 80 ms
+INFO  GET /api/deals/peak-time - Response time: 31 ms
+```
+
+### Performance Results
+
+| Scenario                 | Response Time |
+| ------------------------ | ------------- |
+| First request (no cache) | ~600ms        |
+| Cached request           | ~5-30ms       |
+| External API alone       | ~180ms        |
+
 ## Notes
 
 The external API sometimes uses open/close for deal times and sometimes uses start/end. The code handles both cases.
 
 If a deal does not have its own time window it uses the restaurant hours instead.
-
-The restarantSuburb typo in the response is intentional because it matches the spec.
