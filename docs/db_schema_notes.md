@@ -2,6 +2,8 @@
 
 ## ER Diagram
 
+Present in database-schema.mermaid file/ database-schema.png(backup file).
+
 ## DB Choice
 
 I chose PostgreSQL for this because the data has clear relationships where restaurants have many deals.
