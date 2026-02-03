@@ -7,15 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * Model class representing a restaurant from the external API.
- */
+// maps to each restaurant object in the API JSON
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Restaurant {
-    
+
     private String objectId;
     private String name;
     private String address1;

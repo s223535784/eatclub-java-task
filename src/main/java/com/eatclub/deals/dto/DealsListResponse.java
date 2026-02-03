@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * DTO wrapper for the list of deals returned by Task 1 API.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

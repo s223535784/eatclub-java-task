@@ -5,9 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO for Task 2 API response containing peak deal availability window.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

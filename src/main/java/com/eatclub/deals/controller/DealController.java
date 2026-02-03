@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class DealController {
 
-    private final DealService dealService;
+    private final DealService dealService; // injected by Spring via @RequiredArgsConstructor
 
     // GET /api/deals?timeOfDay=3:00pm - returns active deals at given time
     @GetMapping

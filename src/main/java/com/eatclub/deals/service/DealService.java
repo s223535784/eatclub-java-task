@@ -20,10 +20,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Service class containing business logic for restaurant deals.
- * Handles fetching data from external API and processing deal queries.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +28,7 @@ public class DealService {
     private final RestTemplate restTemplate;
 
     @Value("${eatclub.api.url:https://eccdn.com.au/misc/challengedata.json}")
-    private String apiUrl;
+    private String apiUrl; // loaded from application.properties
 
     // Cache to store API response and avoid repeated calls
     private List<Restaurant> cachedData = null;
@@ -70,17 +66,9 @@ public class DealService {
         }
     }
 
-    /**
-     * Task 1: Get all active deals at a specified time of day.
-     * 
-     * A deal is considered active if:
-     * 1. The restaurant is open at the given time
-     * 2. The deal's time window (if specified) includes the given time
-     * 
-     * @param timeOfDay the time to query (e.g., "3:00pm", "15:00")
-     * @return response containing list of active deals
-     */
+    // Returns all deals active at the given time
     public DealsListResponse getActiveDeals(String timeOfDay) {
+        // parse 3:00pm or 15:00 into LocalTime, throw 400 if invalid
         LocalTime queryTime;
         try {
             queryTime = TimeUtils.parseTime(timeOfDay);
@@ -94,17 +82,15 @@ public class DealService {
         List<DealResponse> activeDeals = new ArrayList<>();
 
         for (Restaurant restaurant : restaurants) {
-            // Parse restaurant operating hours
             LocalTime restaurantOpen = TimeUtils.parseTime(restaurant.getOpen());
             LocalTime restaurantClose = TimeUtils.parseTime(restaurant.getClose());
 
-            // Check if restaurant is open at the query time
+            // skip if restaurant is closed
             if (!TimeUtils.isTimeWithinRange(queryTime, restaurantOpen, restaurantClose)) {
                 log.debug("Restaurant {} is closed at {}", restaurant.getName(), timeOfDay);
                 continue;
             }
 
-            // Check each deal
             if (restaurant.getDeals() != null) {
                 for (Deal deal : restaurant.getDeals()) {
                     if (isDealActive(deal, queryTime, restaurantOpen, restaurantClose)) {
@@ -118,18 +104,9 @@ public class DealService {
         return DealsListResponse.builder().deals(activeDeals).build();
     }
 
-    /**
-     * Checks if a deal is active at the specified time.
-     * 
-     * @param deal the deal to check
-     * @param queryTime the time to check against
-     * @param restaurantOpen restaurant's opening time (fallback if deal has no time)
-     * @param restaurantClose restaurant's closing time (fallback if deal has no time)
-     * @return true if the deal is active at queryTime
-     */
-    private boolean isDealActive(Deal deal, LocalTime queryTime, 
-                                  LocalTime restaurantOpen, LocalTime restaurantClose) {
-        // Get deal's effective time window (falls back to restaurant hours if not specified)
+    // Uses deal time if available, otherwise falls back to restaurant hours
+    private boolean isDealActive(Deal deal, LocalTime queryTime,
+            LocalTime restaurantOpen, LocalTime restaurantClose) {
         String dealOpenStr = deal.getEffectiveOpen();
         String dealCloseStr = deal.getEffectiveClose();
 
@@ -139,15 +116,12 @@ public class DealService {
         return TimeUtils.isTimeWithinRange(queryTime, dealOpen, dealClose);
     }
 
-    /**
-     * Builds a DealResponse DTO from restaurant and deal data.
-     */
     private DealResponse buildDealResponse(Restaurant restaurant, Deal deal) {
         return DealResponse.builder()
                 .restaurantObjectId(restaurant.getObjectId())
                 .restaurantName(restaurant.getName())
                 .restaurantAddress1(restaurant.getAddress1())
-                .restarantSuburb(restaurant.getSuburb()) // Note: intentional misspelling per spec
+                .restarantSuburb(restaurant.getSuburb()) // typo is intentional, matches the spec
                 .restaurantOpen(restaurant.getOpen())
                 .restaurantClose(restaurant.getClose())
                 .dealObjectId(deal.getObjectId())
@@ -158,23 +132,13 @@ public class DealService {
                 .build();
     }
 
-    /**
-     * Task 2: Calculate the peak time window when most deals are available.
-     * 
-     * Algorithm:
-     * 1. Discretize time into minute intervals across the day
-     * 2. For each deal, mark the minutes when it's active
-     * 3. Find the contiguous window with the maximum number of active deals
-     * 
-     * @return the peak time window (start and end times)
-     */
+    // Finds the time window when most deals are active
     public PeakTimeResponse getPeakTime() {
         List<Restaurant> restaurants = fetchRestaurantData();
-        
-        // Array to count active deals for each minute of the day (0-1439)
+
+        // count deals for each minute of the day
         int[] dealCountByMinute = new int[24 * 60];
 
-        // Count active deals for each minute
         for (Restaurant restaurant : restaurants) {
             LocalTime restaurantOpen = TimeUtils.parseTime(restaurant.getOpen());
             LocalTime restaurantClose = TimeUtils.parseTime(restaurant.getClose());
@@ -184,23 +148,17 @@ public class DealService {
                     String dealOpenStr = deal.getEffectiveOpen();
                     String dealCloseStr = deal.getEffectiveClose();
 
-                    // Use deal-specific times or fall back to restaurant hours
-                    LocalTime dealOpen = (dealOpenStr != null) ? 
-                            TimeUtils.parseTime(dealOpenStr) : restaurantOpen;
-                    LocalTime dealClose = (dealCloseStr != null) ? 
-                            TimeUtils.parseTime(dealCloseStr) : restaurantClose;
+                    LocalTime dealOpen = (dealOpenStr != null) ? TimeUtils.parseTime(dealOpenStr) : restaurantOpen;
+                    LocalTime dealClose = (dealCloseStr != null) ? TimeUtils.parseTime(dealCloseStr) : restaurantClose;
 
-                    // Also constrain to restaurant operating hours
+                    // constrain to restaurant hours
                     int startMinute = Math.max(
                             TimeUtils.toMinutesSinceMidnight(dealOpen),
-                            TimeUtils.toMinutesSinceMidnight(restaurantOpen)
-                    );
+                            TimeUtils.toMinutesSinceMidnight(restaurantOpen));
                     int endMinute = Math.min(
                             TimeUtils.toMinutesSinceMidnight(dealClose),
-                            TimeUtils.toMinutesSinceMidnight(restaurantClose)
-                    );
+                            TimeUtils.toMinutesSinceMidnight(restaurantClose));
 
-                    // Increment count for each minute in the deal's active window
                     for (int minute = startMinute; minute <= endMinute; minute++) {
                         dealCountByMinute[minute]++;
                     }
@@ -208,16 +166,15 @@ public class DealService {
             }
         }
 
-        // Find the maximum deal count
         int maxDeals = 0;
         for (int count : dealCountByMinute) {
             maxDeals = Math.max(maxDeals, count);
         }
 
-        // Find the contiguous window with max deals
+        // find the continuous window with max deals
         int peakStart = -1;
         int peakEnd = -1;
-        
+
         for (int i = 0; i < dealCountByMinute.length; i++) {
             if (dealCountByMinute[i] == maxDeals) {
                 if (peakStart == -1) {
@@ -225,19 +182,16 @@ public class DealService {
                 }
                 peakEnd = i;
             } else if (peakStart != -1 && peakEnd != -1) {
-                // Found the end of a peak window
-                // Continue to find if there's a longer one
-                // (This simple approach takes the first contiguous peak window)
-                break;
+                break; // first peak window found
             }
         }
 
         LocalTime startTime = TimeUtils.fromMinutesSinceMidnight(peakStart);
         LocalTime endTime = TimeUtils.fromMinutesSinceMidnight(peakEnd);
 
-        log.info("Peak time window: {} to {} with {} active deals", 
-                TimeUtils.formatTo12Hour(startTime), 
-                TimeUtils.formatTo12Hour(endTime), 
+        log.info("Peak time window: {} to {} with {} active deals",
+                TimeUtils.formatTo12Hour(startTime),
+                TimeUtils.formatTo12Hour(endTime),
                 maxDeals);
 
         return PeakTimeResponse.builder()

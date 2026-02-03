@@ -9,13 +9,11 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Global exception handler for the REST API.
- * Provides consistent error responses across all endpoints.
- */
+// catches exceptions and returns proper error JSON instead of stack traces
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // bad time input like "abc" or "25:00"
     @ExceptionHandler(InvalidTimeFormatException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidTimeFormat(InvalidTimeFormatException ex) {
         Map<String, Object> error = new HashMap<>();
@@ -27,6 +25,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+    // external API is down or unreachable
     @ExceptionHandler(ExternalApiException.class)
     public ResponseEntity<Map<String, Object>> handleExternalApiException(ExternalApiException ex) {
         Map<String, Object> error = new HashMap<>();
@@ -38,6 +37,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 
+    // catch-all for anything unexpected
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         Map<String, Object> error = new HashMap<>();

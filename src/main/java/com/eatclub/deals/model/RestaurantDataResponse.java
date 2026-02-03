@@ -6,9 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * Wrapper class for the external API response containing list of restaurants.
- */
+// Maps the JSON response from external API
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
