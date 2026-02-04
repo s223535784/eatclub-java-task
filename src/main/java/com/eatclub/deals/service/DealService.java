@@ -121,7 +121,7 @@ public class DealService {
                 .restaurantObjectId(restaurant.getObjectId())
                 .restaurantName(restaurant.getName())
                 .restaurantAddress1(restaurant.getAddress1())
-                .restarantSuburb(restaurant.getSuburb()) // typo is intentional, matches the spec
+                .restarantSuburb(restaurant.getSuburb())
                 .restaurantOpen(restaurant.getOpen())
                 .restaurantClose(restaurant.getClose())
                 .dealObjectId(deal.getObjectId())
